@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0f1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Alerta de Energia</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060b18;
+    --surface: #0d1528;
+    --surface2: #131d35;
+    --border: #1e2d4d;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #00ff88;
+    --text: #e8f0ff;
+    --muted: #4a6080;
+    --danger: #ff3b5c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .glow-top {
+    position: fixed;
+    top: -100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(0,212,255,0.12) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 440px;
+    margin: 0 auto;
+    padding: 0 0 40px;
+  }
+
+  /* HEADER */
+  .header {
+    padding: 32px 20px 24px;
+    text-align: center;
+  }
+
+  .header-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(255,107,53,0.15));
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    position: relative;
+  }
+
+  .header-icon::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgba(0,212,255,0.4), transparent, rgba(255,107,53,0.4));
+    z-index: -1;
+    opacity: 0.5;
+  }
+
+  .header h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.5px;
+    line-height: 1.2;
+  }
+
+  .header p {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 300;
+  }
+
+  /* FORM */
+  .form { padding: 0 16px; }
+
+  .section-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 10px;
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border), transparent);
+  }
+
+  /* RADIO CARDS */
+  .radio-grid { display: flex; flex-direction: column; gap: 8px; }
+  .radio-grid.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .radio-card {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .radio-card input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .radio-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+
+  .radio-grid.two-col .radio-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 14px 12px;
+    min-height: 70px;
+    justify-content: center;
+  }
+
+  .radio-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .radio-dot::after {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.2s;
+  }
+
+  .radio-card input:checked ~ .radio-inner {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.06);
+  }
+
+  .radio-card input:checked ~ .radio-inner .radio-dot {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.1);
+  }
+
+  .radio-card input:checked ~ .radio-inner .radio-dot::after {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Variantes de cor para ocorrência */
+  .radio-card.danger input:checked ~ .radio-inner {
+    border-color: var(--danger);
+    background: rgba(255,59,92,0.06);
+  }
+  .radio-card.danger input:checked ~ .radio-inner .radio-dot {
+    border-color: var(--danger);
+  }
+  .radio-card.danger input:checked ~ .radio-inner .radio-dot::after {
+    background: var(--danger);
+  }
+
+  .radio-card.warning input:checked ~ .radio-inner {
+    border-color: var(--accent2);
+    background: rgba(255,107,53,0.06);
+  }
+  .radio-card.warning input:checked ~ .radio-inner .radio-dot {
+    border-color: var(--accent2);
+  }
+  .radio-card.warning input:checked ~ .radio-inner .radio-dot::after {
+    background: var(--accent2);
+  }
+
+  .radio-card.success input:checked ~ .radio-inner {
+    border-color: var(--accent3);
+    background: rgba(0,255,136,0.06);
+  }
+  .radio-card.success input:checked ~ .radio-inner .radio-dot {
+    border-color: var(--accent3);
+  }
+  .radio-card.success input:checked ~ .radio-inner .radio-dot::after {
+    background: var(--accent3);
+  }
+
+  .radio-text { font-size: 13px; font-weight: 500; color: var(--text); line-height: 1.3; }
+  .radio-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .radio-emoji { font-size: 18px; line-height: 1; }
+
+  /* SITE GRID */
+  .site-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .site-card {
+    position: relative;
+    cursor: pointer;
+  }
+
+  .site-card input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .site-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-align: center;
+    min-height: 72px;
+  }
+
+  .site-code {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--muted);
+    transition: color 0.2s;
+    letter-spacing: 1px;
+  }
+
+  .site-name { font-size: 10px; color: var(--muted); margin-top: 2px; transition: color 0.2s; }
+
+  .site-card input:checked ~ .site-inner {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    box-shadow: 0 0 20px rgba(0,212,255,0.1);
+  }
+
+  .site-card input:checked ~ .site-inner .site-code { color: var(--accent); }
+  .site-card input:checked ~ .site-inner .site-name { color: rgba(0,212,255,0.7); }
+
+  /* DATE/TIME ROW */
+  .datetime-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .input-wrap { position: relative; }
+
+  .input-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5) sepia(1) saturate(5) hue-rotate(175deg);
+    cursor: pointer;
+  }
+
+  input:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
+  }
+
+  textarea {
+    resize: none;
+    min-height: 90px;
+    line-height: 1.6;
+    font-size: 14px;
+  }
+
+  textarea::placeholder { color: var(--muted); }
+
+  /* SUBMIT */
+  .submit-wrap { padding: 24px 16px 0; }
+
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #00d4ff, #0098cc);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Syne', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .btn-submit:active { transform: scale(0.98); opacity: 0.9; }
+
+  .btn-submit::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+  }
+
+  .btn-submit:hover::before { left: 100%; }
+
+  .btn-submit:disabled {
+    background: var(--surface2);
+    color: var(--muted);
+    cursor: not-allowed;
+  }
+
+  /* FEEDBACK */
+  .feedback {
+    display: none;
+    margin: 20px 16px 0;
+    padding: 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .feedback.success {
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.3);
+    color: var(--accent3);
+    display: block;
+  }
+
+  .feedback.error {
+    background: rgba(255,59,92,0.08);
+    border: 1px solid rgba(255,59,92,0.3);
+    color: var(--danger);
+    display: block;
+  }
+
+  /* FOOTER */
+  .footer {
+    text-align: center;
+    padding: 24px 16px 0;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* Spinner */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .required-star { color: var(--danger); margin-left: 2px; }
+</style>
+</head>
+<body>
+
+<div class="glow-top"></div>
+
+<div class="app">
+
+  <div class="header">
+    <div class="header-icon">⚡</div>
+    <h1>Alerta de Energia</h1>
+    <p>Registro de ocorrência — Técnico de plantão</p>
+  </div>
+
+  <form class="form" id="alertaForm" action="enviar.php" method="POST">
+
+    <!-- OCORRÊNCIA -->
+    <div class="section-label">Ocorrência <span class="required-star">*</span></div>
+    <div class="radio-grid">
+      <label class="radio-card danger">
+        <input type="radio" name="ocorrencia" value="⚡ Queda de Energia COM impacto" required>
+        <div class="radio-inner">
+          <div class="radio-dot"></div>
+          <div>
+            <div class="radio-text">Queda de Energia <strong>com impacto</strong></div>
+          </div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="ocorrencia" value="⚡ Queda de Energia SEM impacto">
+        <div class="radio-inner">
+          <div class="radio-dot"></div>
+          <div>
+            <div class="radio-text">Queda de Energia <strong>sem impacto</strong></div>
+          </div>
+        </div>
+      </label>
+      <label class="radio-card warning">
+        <input type="radio" name="ocorrencia" value="📈 Pico de Energia COM impacto">
+        <div class="radio-inner">
+          <div class="radio-dot"></div>
+          <div>
+            <div class="radio-text">Pico de Energia <strong>com impacto</strong></div>
+          </div>
+        </div>
+      </label>
+      <label class="radio-card">
+        <input type="radio" name="ocorrencia" value="📈 Pico de Energia SEM impacto">
+        <div class="radio-inner">
+          <div class="radio-dot"></div>
+          <div>
+            <div class="radio-text">Pico de Energia <strong>sem impacto</strong></div>
+          </div>
+        </div>
+      </label>
+    </div>
+
+    <!-- SITE -->
+    <div class="section-label">Site <span class="required-star">*</span></div>
+    <div class="site-grid">
+      <label class="site-card">
+        <input type="radio" name="site" value="VVA" required>
+        <div class="site-inner">
+          <div class="site-code">VVA</div>
+          <div class="site-name">Vila Velha A</div>
+        </div>
+      </label>
+      <label class="site-card">
+        <input type="radio" name="site" value="RPO">
+        <div class="site-inner">
+          <div class="site-code">RPO</div>
+          <div class="site-name">Repositório</div>
+        </div>
+      </label>
+      <label class="site-card">
+        <input type="radio" name="site" value="JFA">
+        <div class="site-inner">
+          <div class="site-code">JFA</div>
+          <div class="site-name">Jardim Fátima</div>
+        </div>
+      </label>
+      <label class="site-card">
+        <input type="radio" name="site" value="GNA">
+        <div class="site-inner">
+          <div class="site-code">GNA</div>
+          <div class="site-name">Guaranhuns</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- DATA E HORA -->
+    <div class="section-label">Início da Ocorrência <span class="required-star">*</span></div>
+    <div class="datetime-row">
+      <div class="input-wrap">
+        <label class="input-label">Data</label>
+        <input type="date" name="data" id="data" required>
+      </div>
+      <div class="input-wrap">
+        <label class="input-label">Hora</label>
+        <input type="time" name="hora" id="hora" required>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="section-label">Status <span class="required-star">*</span></div>
+    <div class="radio-grid two-col">
+      <label class="radio-card success">
+        <input type="radio" name="status" value="✅ Normalizado" required>
+        <div class="radio-inner">
+          <div class="radio-emoji">✅</div>
+          <div class="radio-text">Normalizado</div>
+        </div>
+      </label>
+      <label class="radio-card warning">
+        <input type="radio" name="status" value="🔋 Gerador em funcionamento">
+        <div class="radio-inner">
+          <div class="radio-emoji">🔋</div>
+          <div class="radio-text">Gerador em funcionamento</div>
+        </div>
+      </label>
+    </div>
+
+    <!-- OBSERVAÇÃO -->
+    <div class="section-label">Observação</div>
+    <textarea name="observacao" placeholder="Descreva detalhes adicionais sobre a ocorrência (opcional)..."></textarea>
+
+    <div class="submit-wrap">
+      <button type="submit" class="btn-submit" id="btnEnviar">
+        <span>⚡</span>
+        <span>Enviar Alerta</span>
+      </button>
+    </div>
+
+  </form>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="footer">
+    BrasilCenter — Sistema de Monitoramento de Energia
+  </div>
+
+</div>
+
+<script>
+  // Preencher data e hora atual automaticamente
+  const hoje = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  document.getElementById('data').value =
+    `${hoje.getFullYear()}-${pad(hoje.getMonth()+1)}-${pad(hoje.getDate())}`;
+  document.getElementById('hora').value =
+    `${pad(hoje.getHours())}:${pad(hoje.getMinutes())}`;
+
+  // Submit via AJAX
+  document.getElementById('alertaForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const btn = document.getElementById('btnEnviar');
+    const fb = document.getElementById('feedback');
+
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div><span>Enviando alerta...</span>';
+    fb.className = 'feedback';
+    fb.style.display = 'none';
+
+    try {
+      const formData = new FormData(this);
+      const res = await fetch('https://vipofficialstore.com/alerta/enviar.php', { method: 'POST', body: formData });
+      const json = await res.json();
+
+      if (json.sucesso) {
+        fb.className = 'feedback success';
+        fb.innerHTML = '✅ <strong>Alerta enviado com sucesso!</strong><br>A gerência foi notificada via WhatsApp.';
+        this.reset();
+        // Recolocar data/hora atual
+        document.getElementById('data').value =
+          `${hoje.getFullYear()}-${pad(hoje.getMonth()+1)}-${pad(hoje.getDate())}`;
+        document.getElementById('hora').value =
+          `${pad(hoje.getHours())}:${pad(hoje.getMinutes())}`;
+      } else {
+        throw new Error(json.erro || 'Erro desconhecido');
+      }
+    } catch (err) {
+      fb.className = 'feedback error';
+      fb.innerHTML = `❌ <strong>Falha ao enviar.</strong><br>${err.message}`;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<span>⚡</span><span>Enviar Alerta</span>';
+    fb.style.display = 'block';
+    fb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+</script>
+
+</body>
+</html>
